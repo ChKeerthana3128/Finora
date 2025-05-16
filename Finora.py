@@ -13,7 +13,7 @@ vectorizer = pickle.load(open('tfidf_vectorizer.pkl', 'rb'))
 
 # Load datasets
 train_df = pd.read_csv('train.csv')
-test_df = pd.read_csv('test.csv')
+test_df = pd.read_csv('valid.csv')
 
 # Clean text function
 def clean_text(text):
