@@ -74,14 +74,14 @@ st.markdown("### Twitter Financial News Sentiment Analysis")
 
 # Dashboard Section
 if choice == "Dashboard":
-    st.subheader("📊 Tweet Category Distribution")
+    st.subheader("📊 Tweet Category Distribution (Training Set)")
     fig1, ax1 = plt.subplots(figsize=(8, 6))
     sns.countplot(x='label', data=train_df, ax=ax1)
     ax1.set_xlabel("Category")
     ax1.set_ylabel("Count")
     st.pyplot(fig1)
 
-    st.subheader("☁️ Word Cloud of Financial Tweets")
+    st.subheader("☁️ Word Cloud of Financial Tweets (Training Set)")
     text = ' '.join(train_df['clean_text'])
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     fig2, ax2 = plt.subplots(figsize=(10, 5))
@@ -89,6 +89,14 @@ if choice == "Dashboard":
     ax2.axis('off')
     st.pyplot(fig2)
 
-    st.subheader("🔍 Explore Tweet Samples")
+    st.subheader("🔍 Explore Tweet Samples (Training Set)")
     category_filter = st.selectbox("Filter by Label", sorted(train_df['label'].unique()))
     st.write(train_df[train_df['label'] == category_filter][['text']].sample(5, random_state=42))
+
+    # Optional: Uncomment to add validation set category distribution
+    # st.subheader("📊 Tweet Category Distribution (Validation Set)")
+    # fig3, ax3 = plt.subplots(figsize=(8, 6))
+    # sns.countplot(x='label', data=valid_df, ax=ax3)
+    # ax3.set_xlabel("Category")
+    # ax3.set_ylabel("Count")
+    # st.pyplot(fig3)
