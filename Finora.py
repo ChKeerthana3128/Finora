@@ -6,6 +6,7 @@ import seaborn as sns
 import re
 from wordcloud import WordCloud
 import os
+import requests
 
 # Define base directory for file paths
 # BASE_DIR is the directory containing this script (Finora.py)
@@ -14,6 +15,28 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define file paths (all files are in the same directory as Finora.py)
 TRAIN_PATH = os.path.join(BASE_DIR, 'train.csv')
 VALID_PATH = os.path.join(BASE_DIR, 'valid.csv')
+
+# Optional: Download large files from external URLs if not present
+def download_file(url, filename):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Check for request errors
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        st.info(f"Downloaded {filename} from {url}")
+    except Exception as e:
+        st.error(f"Failed to download {filename}: {str(e)}")
+        st.stop()
+
+# Replace these URLs with actual hosted URLs if files are hosted externally
+TRAIN_URL = None  # e.g., 'https://your-hosted-url/train.csv'
+VALID_URL = None  # e.g., 'https://your-hosted-url/valid.csv'
+
+# Download CSVs if not present and URLs are provided
+if TRAIN_URL and not os.path.exists('train.csv'):
+    download_file(TRAIN_URL, 'train.csv')
+if VALID_URL and not os.path.exists('valid.csv'):
+    download_file(VALID_URL, 'valid.csv')
 
 # Load datasets with error handling
 try:
