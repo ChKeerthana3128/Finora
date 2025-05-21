@@ -33,10 +33,10 @@ TRAIN_URL = None  # e.g., 'https://your-hosted-url/train.csv'
 VALID_URL = None  # e.g., 'https://your-hosted-url/valid.csv'
 
 # Download CSVs if not present and URLs are provided
-if TRAIN_URL and not os.path.exists('train.csv'):
-    download_file(TRAIN_URL, 'train.csv')
-if VALID_URL and not os.path.exists('valid.csv'):
-    download_file(VALID_URL, 'valid.csv')
+if TRAIN_URL and not os.path.exists('train_data.csv'):
+    download_file(TRAIN_URL, 'train_data.csv')
+if VALID_URL and not os.path.exists('valid_data.csv'):
+    download_file(VALID_URL, 'valid_data.csv')
 
 # Load datasets with error handling
 try:
