@@ -13,8 +13,8 @@ import requests
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Define file paths (all files are in the same directory as Finora.py)
-TRAIN_PATH = os.path.join(BASE_DIR, 'train.csv')
-VALID_PATH = os.path.join(BASE_DIR, 'valid.csv')
+TRAIN_PATH = os.path.join(BASE_DIR, 'train_data.csv')
+VALID_PATH = os.path.join(BASE_DIR, 'valid_data.csv')
 
 # Optional: Download large files from external URLs if not present
 def download_file(url, filename):
