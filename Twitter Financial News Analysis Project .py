@@ -11,7 +11,7 @@ try:
     from PIL import Image
     import os
 except ModuleNotFoundError as e:
-    st.error(f"Required library not found: {e}. Please ensure all dependencies are installed.")
+    st.error(f"Required library not found: {e}. Please install dependencies using 'pip install -r requirements.txt'.")
     st.stop()
 
 # Download NLTK resources with error handling
@@ -44,7 +44,7 @@ def load_models():
         le = joblib.load('label_encoder.pkl')
         return lr_model, tfidf, le
     except FileNotFoundError as e:
-        st.error(f"Model file not found: {e}. Ensure model files are in the project directory.")
+        st.error(f"Model file not found: {e}. Run 'train_model.py' to generate model files.")
         return None, None, None
 
 lr_model, tfidf, le = load_models()
@@ -96,9 +96,9 @@ if page == "Dataset Exploration":
                 image = Image.open('wordcloud_train.png')
                 st.image(image, caption="Word Cloud of Training Data", use_column_width=True)
             except Exception as e:
-                st.warning(f"Failed to load word cloud image: {e}")
+                st.warning(f"Failed to load word cloud image: {e}. Run 'train_model.py' to generate it.")
         else:
-            st.warning("Word cloud image not found. Run the Colab notebook to generate 'wordcloud_train.png'.")
+            st.warning("Word cloud image not found. Run 'train_model.py' to generate 'wordcloud_train.png'.")
         
         # Label distribution plot
         st.subheader("Label Distribution")
@@ -107,9 +107,9 @@ if page == "Dataset Exploration":
                 image = Image.open('label_distribution.png')
                 st.image(image, caption="Label Distribution in Training Data", use_column_width=True)
             except Exception as e:
-                st.warning(f"Failed to load label distribution image: {e}")
+                st.warning(f"Failed to load label distribution image: {e}. Run 'train_model.py' to generate it.")
         else:
-            st.warning("Label distribution plot not found. Run the Colab notebook to generate 'label_distribution.png'.")
+            st.warning("Label distribution plot not found. Run 'train_model.py' to generate 'label_distribution.png'.")
 
 # Model Evaluation Page
 elif page == "Model Evaluation":
@@ -120,17 +120,17 @@ elif page == "Model Evaluation":
             image = Image.open('lr_confusion_matrix.png')
             st.image(image, caption="Confusion Matrix for Logistic Regression", use_column_width=True)
         except Exception as e:
-            st.warning(f"Failed to load confusion matrix image: {e}")
+            st.warning(f"Failed to load confusion matrix image: {e}. Run 'train_model.py' to generate it.")
     else:
-        st.warning("Confusion matrix image not found. Run the Colab notebook to generate 'lr_confusion_matrix.png'.")
+        st.warning("Confusion matrix image not found. Run 'train_model.py' to generate 'lr_confusion_matrix.png'.")
     
-    st.write("Note: Detailed classification report requires validation data and predictions. Run the Colab notebook for full metrics.")
+    st.write("Note: Detailed classification report requires validation data and predictions. Run 'train_model.py' for full metrics.")
 
 # Tweet Classification Page
 elif page == "Tweet Classification":
     st.header("Tweet Classification")
     if lr_model is None or tfidf is None or le is None:
-        st.error("Models not loaded. Ensure model files ('lr_model.pkl', 'tfidf_vectorizer.pkl', 'label_encoder.pkl') are available.")
+        st.error("Models not loaded. Run 'train_model.py' to generate 'lr_model.pkl', 'tfidf_vectorizer.pkl', and 'label_encoder.pkl'.")
     else:
         st.subheader("Classify a New Tweet")
         user_input = st.text_area("Enter a financial tweet:", "Apple stock rises after strong earnings report")
