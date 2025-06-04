@@ -1,52 +1,75 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
 
-# Load and preprocess data
+# Load & preprocess
 @st.cache_data
-def load_data():
-    train_df = pd.read_csv('train_data.csv')
-    valid_df = pd.read_csv('valid_data.csv')
+def load_and_prepare():
+    train_df = pd.read_csv("train_data.csv")
+    valid_df = pd.read_csv("valid_data.csv")
+
+    def clean_text(text):
+        text = re.sub(r"http\S+|www\S+", "", text)
+        text = re.sub(r"[^a-zA-Z\s]", "", text)
+        text = text.lower().strip()
+        return text
+
+    train_df['clean_text'] = train_df['text'].apply(clean_text)
+    valid_df['clean_text'] = valid_df['text'].apply(clean_text)
+
     return train_df, valid_df
 
 # Train model
 @st.cache_resource
 def train_model(train_df):
-    tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
-    X_train = tfidf.fit_transform(train_df['text'])
-    y_train = train_df['label']
-    
-    model = LogisticRegression(max_iter=200)
-    model.fit(X_train, y_train)
+    vectorizer = TfidfVectorizer(max_features=5000)
+    X = vectorizer.fit_transform(train_df['clean_text'])
 
-    return model, tfidf
+    label_encoder = LabelEncoder()
+    y = label_encoder.fit_transform(train_df['label'])
 
-# Map labels
-label_map = {0: "Negative", 1: "Neutral", 2: "Positive"}
+    model = LogisticRegression(max_iter=300)
+    model.fit(X, y)
 
-# Streamlit UI
+    return model, vectorizer, label_encoder
+
+# Label mapping
+label_map = {
+    0: "Analyst Update", 1: "Fed | Central Banks", 2: "Company | Product News",
+    3: "Treasuries | Corporate Debt", 4: "Dividend", 5: "Earnings", 6: "Energy | Oil",
+    7: "Financials", 8: "Currencies", 9: "General News | Opinion", 10: "Gold | Metals | Materials",
+    11: "IPO", 12: "Legal | Regulation", 13: "M&A | Investments", 14: "Macro", 15: "Markets",
+    16: "Politics", 17: "Personnel Change", 18: "Stock Commentary", 19: "Stock Movement"
+}
+
+# Streamlit app
 def main():
-    st.title("📊 Twitter Financial Sentiment Analyzer")
-    st.write("Analyze the sentiment of financial news tweets")
+    st.set_page_config(page_title="Twitter Financial News Classifier", layout="centered")
+    st.title("📈 Twitter Financial News - Topic Classifier")
 
-    train_df, valid_df = load_data()
-    model, tfidf = train_model(train_df)
+    st.markdown("Enter a financial tweet to predict its category.")
 
-    st.subheader("📌 Enter a tweet for analysis:")
-    user_input = st.text_area("Tweet:", max_chars=280)
+    train_df, valid_df = load_and_prepare()
+    model, vectorizer, label_encoder = train_model(train_df)
 
-    if st.button("Predict Sentiment"):
-        if user_input.strip() == "":
+    user_input = st.text_area("📝 Enter tweet here:", max_chars=280)
+
+    if st.button("🔍 Predict Category"):
+        if not user_input.strip():
             st.warning("Please enter a tweet.")
         else:
-            X_input = tfidf.transform([user_input])
-            prediction = model.predict(X_input)[0]
-            st.success(f"Predicted Sentiment: **{label_map[prediction]}**")
+            clean_input = re.sub(r"http\S+|www\S+", "", user_input)
+            clean_input = re.sub(r"[^a-zA-Z\s]", "", clean_input).lower().strip()
+            X_input = vectorizer.transform([clean_input])
+            pred = model.predict(X_input)[0]
+            category = label_map[pred]
+            st.success(f"🏷 Predicted Topic: **{category}**")
 
-    st.subheader("📈 Validation Data Preview")
-    st.dataframe(valid_df.head())
+    if st.checkbox("📊 Show Validation Data"):
+        st.dataframe(valid_df[['text', 'label']].head())
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
