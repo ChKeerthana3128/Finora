@@ -121,8 +121,8 @@ elif page == "Model Evaluation":
             st.image(image, caption="Confusion Matrix for Logistic Regression", use_column_width=True)
         except Exception as e:
             st.warning(f"Failed to load confusion matrix image: {e}. Run 'train_model.py' to generate it.")
-    else:
-        st.warning("Confusion matrix image not found. Run 'train_model.py' to generate 'lr_confusion_matrix.png'.")
+        else:
+            st.warning("Confusion matrix image not found. Run 'train_model.py' to generate 'lr_confusion_matrix.png'.")
     
     st.write("Note: Detailed classification report requires validation data and predictions. Run 'train_model.py' for full metrics.")
 
