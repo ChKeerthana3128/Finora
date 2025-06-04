@@ -1,20 +1,28 @@
 import streamlit as st
-import pandas as pd
-import joblib
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import matplotlib.pyplot as plt
-import seaborn as sns
-from PIL import Image
-import os
+try:
+    import pandas as pd
+    import joblib
+    import re
+    import nltk
+    from nltk.corpus import stopwords
+    from nltk.tokenize import word_tokenize
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from PIL import Image
+    import os
+except ModuleNotFoundError as e:
+    st.error(f"Required library not found: {e}. Please ensure all dependencies are installed.")
+    st.stop()
 
-# Download NLTK resources
-nltk.download('stopwords')
-nltk.download('punkt')
+# Download NLTK resources with error handling
+try:
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt', quiet=True)
+except Exception as e:
+    st.error(f"Failed to download NLTK resources: {e}")
+    st.stop()
 
-# Define text cleaning function (same as in Colab notebook)
+# Define text cleaning function
 def clean_text(text):
     if not isinstance(text, str):
         return ''
@@ -36,7 +44,7 @@ def load_models():
         le = joblib.load('label_encoder.pkl')
         return lr_model, tfidf, le
     except FileNotFoundError as e:
-        st.error(f"Model file not found: {e}")
+        st.error(f"Model file not found: {e}. Ensure model files are in the project directory.")
         return None, None, None
 
 lr_model, tfidf, le = load_models()
@@ -48,7 +56,7 @@ def load_data():
         df_train = pd.read_csv('train_data.csv')
         return df_train
     except FileNotFoundError as e:
-        st.error(f"Dataset not found: {e}")
+        st.error(f"Dataset not found: {e}. Ensure 'train_data.csv' is in the project directory.")
         return None
 
 df_train = load_data()
@@ -69,8 +77,8 @@ if page == "Dataset Exploration":
         st.write(f"Number of tweets: {df_train.shape[0]}")
         st.write(f"Number of unique labels: {df_train['label'].nunique()}")
         st.write("Label distribution:")
-        st.dataframe(df_train['label'].value_counts().reset_index(name='Count'))
-
+        st.dataframe(df_train['label'].value_counts().reset_index(name='Count').rename(columns={'index': 'Label'}))
+        
         # Tweet length distribution
         df_train['text_length'] = df_train['text'].apply(lambda x: len(x.split()))
         st.subheader("Tweet Length Distribution")
@@ -78,54 +86,72 @@ if page == "Dataset Exploration":
         sns.histplot(df_train['text_length'], bins=30, kde=True, ax=ax)
         ax.set_title('Tweet Length Distribution')
         ax.set_xlabel('Number of Words')
+        ax.set_ylabel('Count')
         st.pyplot(fig)
-
+        
         # Word cloud
         st.subheader("Word Cloud")
         if os.path.exists('wordcloud_train.png'):
-            image = Image.open('wordcloud_train.png')
-            st.image(image, caption="Word Cloud of Training Data")
+            try:
+                image = Image.open('wordcloud_train.png')
+                st.image(image, caption="Word Cloud of Training Data", use_column_width=True)
+            except Exception as e:
+                st.warning(f"Failed to load word cloud image: {e}")
         else:
-            st.warning("Word cloud image not found. Run Colab notebook to generate.")
-
+            st.warning("Word cloud image not found. Run the Colab notebook to generate 'wordcloud_train.png'.")
+        
         # Label distribution plot
         st.subheader("Label Distribution")
         if os.path.exists('label_distribution.png'):
-            image = Image.open('label_distribution.png')
-            st.image(image, caption="Label Distribution in Training Data")
+            try:
+                image = Image.open('label_distribution.png')
+                st.image(image, caption="Label Distribution in Training Data", use_column_width=True)
+            except Exception as e:
+                st.warning(f"Failed to load label distribution image: {e}")
         else:
-            st.warning("Label distribution plot not found. Run Colab notebook to generate.")
+            st.warning("Label distribution plot not found. Run the Colab notebook to generate 'label_distribution.png'.")
 
 # Model Evaluation Page
 elif page == "Model Evaluation":
     st.header("Model Evaluation")
     st.subheader("Logistic Regression Performance")
     if os.path.exists('lr_confusion_matrix.png'):
-        image = Image.open('lr_confusion_matrix.png')
-        st.image(image, caption="Confusion Matrix for Logistic Regression")
+        try:
+            image = Image.open('lr_confusion_matrix.png')
+            st.image(image, caption="Confusion Matrix for Logistic Regression", use_column_width=True)
+        except Exception as e:
+            st.warning(f"Failed to load confusion matrix image: {e}")
     else:
-        st.warning("Confusion matrix image not found. Run Colab notebook to generate.")
-
-    # Display classification report (simulated, as report requires y_valid)
-    st.write("Note: Detailed classification report requires validation data and predictions. Run Colab notebook for full metrics.")
+        st.warning("Confusion matrix image not found. Run the Colab notebook to generate 'lr_confusion_matrix.png'.")
+    
+    st.write("Note: Detailed classification report requires validation data and predictions. Run the Colab notebook for full metrics.")
 
 # Tweet Classification Page
 elif page == "Tweet Classification":
     st.header("Tweet Classification")
     if lr_model is None or tfidf is None or le is None:
-        st.error("Models not loaded. Ensure model files are available.")
+        st.error("Models not loaded. Ensure model files ('lr_model.pkl', 'tfidf_vectorizer.pkl', 'label_encoder.pkl') are available.")
     else:
         st.subheader("Classify a New Tweet")
         user_input = st.text_area("Enter a financial tweet:", "Apple stock rises after strong earnings report")
         if st.button("Classify"):
-            # Clean and transform input
-            clean_input = clean_text(user_input)
-            input_tfidf = tfidf.transform([clean_input])
-            # Predict
-            prediction = lr_model.predict(input_tfidf)[0]
-            label = le.inverse_transform([prediction])[0]
-            st.success(f"Predicted Label: **{label}**")
-            st.write(f"Input Tweet: {user_input}")
+            if user_input.strip():
+                # Clean and transform input
+                clean_input = clean_text(user_input)
+                if clean_input:
+                    input_tfidf = tfidf.transform([clean_input])
+                    # Predict
+                    try:
+                        prediction = lr_model.predict(input_tfidf)[0]
+                        label = le.inverse_transform([prediction])[0]
+                        st.success(f"Predicted Label: **{label}**")
+                        st.write(f"Input Tweet: {user_input}")
+                    except Exception as e:
+                        st.error(f"Prediction failed: {e}")
+                else:
+                    st.error("Input text is empty after cleaning. Please enter a valid tweet.")
+            else:
+                st.error("Please enter a tweet to classify.")
 
 # Footer
 st.markdown("---")
