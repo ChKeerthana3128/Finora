@@ -1,6 +1,7 @@
-streamlit==1.38.0
+streamlit==1.39.0
 pandas==2.2.3
 scikit-learn==1.5.2
 tweepy==4.14.0
 numpy==1.26.4
 regex==2024.9.11
+python-dotenv==1.0.1
