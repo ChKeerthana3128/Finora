@@ -11,25 +11,34 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Twitter API credentials (stored in a .env file for security)
+# Twitter API credentials
 API_KEY = os.getenv("TWITTER_API_KEY")
 API_SECRET = os.getenv("TWITTER_API_SECRET")
 ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
-BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
 # Initialize Tweepy client
-auth = tweepy.OAuthHandler(API_KEY, API_SECRET)
-auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth)
+try:
+    auth = tweepy.OAuthHandler(API_KEY, API_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    api = tweepy.API(auth, wait_on_rate_limit=True)
+except Exception as e:
+    st.error(f"Failed to initialize Twitter API: {str(e)}")
+    api = None
 
 # Load & preprocess
 @st.cache_data
 def load_and_prepare():
-    train_df = pd.read_csv("train_data.csv")
-    valid_df = pd.read_csv("valid_data.csv")
+    try:
+        train_df = pd.read_csv("train_data.csv")
+        valid_df = pd.read_csv("valid_data.csv")
+    except FileNotFoundError:
+        st.error("Data files (train_data.csv or valid_data.csv) not found.")
+        return None, None
 
     def clean_text(text):
+        if not isinstance(text, str):
+            text = str(text)
         text = re.sub(r"http\S+|www\S+", "", text)
         text = re.sub(r"[^a-zA-Z\s]", "", text)
         text = text.lower().strip()
@@ -65,6 +74,8 @@ label_map = {
 
 # Function to fetch recent tweets from a Twitter handle
 def fetch_tweets_from_handle(handle, count=10):
+    if not api:
+        return []
     try:
         tweets = api.user_timeline(screen_name=handle, count=count, tweet_mode="extended")
         return [tweet.full_text for tweet in tweets]
@@ -79,15 +90,19 @@ def main():
 
     st.markdown("Enter a Twitter handle or a tweet to predict its financial news category.")
 
+    # Load data and train model
     train_df, valid_df = load_and_prepare()
+    if train_df is None or valid_df is None:
+        return
+
     model, vectorizer, label_encoder = train_model(train_df)
 
-    # Input for Twitter handle or manual tweet
+    # Input selection
     input_type = st.radio("Choose input type:", ("Twitter Handle", "Manual Tweet"))
 
     if input_type == "Twitter Handle":
         twitter_handle = st.text_input("🐦 Enter Twitter handle (without @):", value="Reuters")
-        tweet_count = st.slider("Number of tweets to fetch:", 1, 100, 10)
+        tweet_count = st.slider("Number of tweets to fetch:", 1, 50, 10)
         if st.button("🔍 Fetch and Classify Tweets"):
             if not twitter_handle.strip():
                 st.warning("Please enter a Twitter handle.")
