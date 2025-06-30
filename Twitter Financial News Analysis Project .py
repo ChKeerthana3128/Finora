@@ -33,7 +33,10 @@ def load_and_prepare():
         train_df = pd.read_csv("train_data.csv")
         valid_df = pd.read_csv("valid_data.csv")
     except FileNotFoundError:
-        st.error("Data files (train_data.csv or valid_data.csv) not found.")
+        st.error("Data files (train_data.csv or valid_data.csv) not found. Please ensure they are in the app directory.")
+        return None, None
+    except pd.errors.EmptyDataError:
+        st.error("Data files are empty or corrupted.")
         return None, None
 
     def clean_text(text):
@@ -52,16 +55,20 @@ def load_and_prepare():
 # Train model
 @st.cache_resource
 def train_model(train_df):
-    vectorizer = TfidfVectorizer(max_features=5000)
-    X = vectorizer.fit_transform(train_df['clean_text'])
+    try:
+        vectorizer = TfidfVectorizer(max_features=5000)
+        X = vectorizer.fit_transform(train_df['clean_text'])
 
-    label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(train_df['label'])
+        label_encoder = LabelEncoder()
+        y = label_encoder.fit_transform(train_df['label'])
 
-    model = LogisticRegression(max_iter=300)
-    model.fit(X, y)
+        model = LogisticRegression(max_iter=300)
+        model.fit(X, y)
 
-    return model, vectorizer, label_encoder
+        return model, vectorizer, label_encoder
+    except Exception as e:
+        st.error(f"Error training model: {str(e)}")
+        return None, None, None
 
 # Label mapping
 label_map = {
@@ -96,6 +103,8 @@ def main():
         return
 
     model, vectorizer, label_encoder = train_model(train_df)
+    if model is None or vectorizer is None or label_encoder is None:
+        return
 
     # Input selection
     input_type = st.radio("Choose input type:", ("Twitter Handle", "Manual Tweet"))
