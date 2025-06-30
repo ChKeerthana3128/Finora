@@ -55,7 +55,8 @@ def main():
     train_df, valid_df = load_and_prepare()
     model, vectorizer, label_encoder = train_model(train_df)
 
-    user_input = st.text_area("📝 Enter tweet here:", max_chars=280)
+    # Increased max_chars to 1000
+    user_input = st.text_area("📝 Enter tweet here:", max_chars=1000)
 
     if st.button("🔍 Predict Category"):
         if not user_input.strip():
